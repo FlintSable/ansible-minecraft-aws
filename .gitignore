@@ -1,0 +1,16 @@
+# hosts.ini will be the output of 02_inventory.sh — contains your live EC2 IP, regenerated each run
+hosts.ini
+
+# Local Ansible state
+*.retry
+.ansible/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Local-only credential files (just in case)
+.env
+*.pem

@@ -1,2 +1,3 @@
-# terraform-ansible-minecraft-aws
-# AWS Minecraft Server Infrastructure Automation
+# ansible-minecraft-aws
+
+Automated deployment of a Minecraft server on AWS using Ansible and GitHub Actions.
