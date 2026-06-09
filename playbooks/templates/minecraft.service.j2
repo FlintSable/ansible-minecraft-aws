@@ -1,0 +1,34 @@
+# minecraft.service — managed by Ansible.
+# Renders to /etc/systemd/system/minecraft.service via the template module.
+#
+# Compared to Part 1's unit, this one fixes the broken-shutdown behavior by
+# wiring Java's stdin to a named pipe (FIFO). ExecStop writes "stop" to the FIFO,
+# which Minecraft's input loop reads and uses to run the proper shutdown sequence
+# (save world, save player data, save stats, exit clean).
+
+[Unit]
+Description=Minecraft Server (managed by ansible-minecraft-aws)
+After=network.target
+
+[Service]
+Type=simple
+User={{ minecraft_user }}
+Group={{ minecraft_group }}
+WorkingDirectory={{ minecraft_server_dir }}
+
+# Re-create the FIFO on each start; redirect Java's stdin from it.
+ExecStartPre=/usr/bin/rm -f {{ minecraft_server_dir }}/server.stdin
+ExecStartPre=/usr/bin/mkfifo {{ minecraft_server_dir }}/server.stdin
+
+# `tail -f` holds the FIFO open so Java doesn't see EOF before ExecStop fires.
+ExecStart=/bin/sh -c 'tail -f {{ minecraft_server_dir }}/server.stdin | /usr/bin/java -Xms{{ java_heap_size }} -Xmx{{ java_heap_size }} -jar server.jar nogui'
+
+# Clean shutdown: warn players, send /stop, let TimeoutStopSec be the safety net.
+ExecStop=/bin/sh -c 'echo "say Server shutting down in 10 seconds…" > {{ minecraft_server_dir }}/server.stdin; sleep 10; echo "stop" > {{ minecraft_server_dir }}/server.stdin'
+TimeoutStopSec=60
+
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

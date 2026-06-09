@@ -1,0 +1,121 @@
+---
+# playbooks/site.yml — install + configure Minecraft on the minecraft host group.
+# Single play. vars: block below is the single source of truth for all tunables.
+
+- name: Configure Minecraft server on EC2
+  hosts: minecraft
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # Version & download (Part 1 §7)
+    minecraft_version: "26.1.2"
+    server_jar_url: "https://piston-data.mojang.com/v1/objects/97ccd4c0ed3f81bbb7bfacddd1090b0c56f9bc51/server.jar"
+
+    # System user & paths (Part 1 §6)
+    minecraft_user:       minecraft
+    minecraft_group:      minecraft
+    minecraft_home:       /opt/minecraft
+    minecraft_server_dir: /opt/minecraft/server
+
+    # Java (Part 1 §5, §10)
+    java_package:   openjdk-25-jre-headless
+    java_heap_size: "800M"
+
+    # Network (Part 1 §9, §11, §13)
+    mc_port:          25565
+    mc_query_enabled: true
+    mc_query_port:    25565
+
+    # Server identity (the only non-default we set; everything else stays vanilla)
+    motd: "Acme Corp Minecraft Server"
+
+  tasks:
+    # --- Install phase (Part 1 §5–§6) ---------------------------------------
+    - name: Install Java + wget
+      ansible.builtin.apt:
+        name:
+          - "{{ java_package }}"
+          - wget
+        state: present
+        update_cache: yes
+
+    - name: Create minecraft system user
+      ansible.builtin.user:
+        name: "{{ minecraft_user }}"
+        system: yes
+        home: "{{ minecraft_home }}"
+        shell: /usr/sbin/nologin
+        state: present
+
+    - name: Create minecraft server directory
+      ansible.builtin.file:
+        path: "{{ minecraft_server_dir }}"
+        state: directory
+        owner: "{{ minecraft_user }}"
+        group: "{{ minecraft_group }}"
+        mode: '0755'
+
+    # --- Configure phase (Part 1 §7–§10) -------------------------------------
+    - name: Download Minecraft server jar
+      ansible.builtin.get_url:
+        url: "{{ server_jar_url }}"
+        dest: "{{ minecraft_server_dir }}/server.jar"
+        owner: "{{ minecraft_user }}"
+        group: "{{ minecraft_group }}"
+        mode: '0644'
+
+    - name: Accept the EULA
+      ansible.builtin.copy:
+        content: "eula=true\n"
+        dest: "{{ minecraft_server_dir }}/eula.txt"
+        owner: "{{ minecraft_user }}"
+        group: "{{ minecraft_group }}"
+        mode: '0644'
+
+    - name: Render server.properties
+      ansible.builtin.template:
+        src: templates/server.properties.j2
+        dest: "{{ minecraft_server_dir }}/server.properties"
+        owner: "{{ minecraft_user }}"
+        group: "{{ minecraft_group }}"
+        mode: '0644'
+      notify: Restart minecraft service
+
+    - name: Render systemd unit
+      ansible.builtin.template:
+        src: templates/minecraft.service.j2
+        dest: /etc/systemd/system/minecraft.service
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart minecraft service
+
+    - name: Enable and start minecraft service
+      ansible.builtin.systemd:
+        name: minecraft
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    # --- Verify phase --------------------------------------------------------
+    - name: Wait for Minecraft to listen on {{ mc_port }}
+      ansible.builtin.wait_for:
+        port: "{{ mc_port }}"
+        delay: 10
+        timeout: 60
+
+    - name: Wait for "Done" in journalctl (world load complete)
+      ansible.builtin.command: journalctl -u minecraft -n 200 --no-pager
+      register: mc_log
+      until: '"Done" in mc_log.stdout'
+      retries: 12
+      delay: 10
+      changed_when: false
+
+  handlers:
+    - name: Restart minecraft service
+      ansible.builtin.systemd:
+        name: minecraft
+        state: restarted
+        daemon_reload: yes
