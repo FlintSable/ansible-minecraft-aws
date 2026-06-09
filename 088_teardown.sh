@@ -5,6 +5,21 @@ set -euo pipefail
 # shellcheck source=_env.sh
 source "$(dirname "$0")/_env.sh"
 
+HOSTS_FILE="hosts.ini"
+PUBLIC_IP=""
+
+if [[ -f "$HOSTS_FILE" ]]; then
+  PUBLIC_IP=$(awk '/^mc1 / {
+    for (i = 1; i <= NF; i++) {
+      if ($i ~ /^ansible_host=/) {
+        split($i, host, "=")
+        print host[2]
+        exit
+      }
+    }
+  }' "$HOSTS_FILE")
+fi
+
 echo "==> Verifying AWS credentials"
 aws sts get-caller-identity >/dev/null || {
   echo "ERROR: AWS credentials missing or expired. Refresh from Learner Lab." >&2
@@ -50,6 +65,20 @@ echo "==> Deleting AWS key pair '$KEY_NAME' (local $KEY_FILE preserved)"
 if aws ec2 describe-key-pairs --key-names "$KEY_NAME" >/dev/null 2>&1; then
   aws ec2 delete-key-pair --key-name "$KEY_NAME"
   echo "    deleted from AWS."
+else
+  echo "    not found."
+fi
+
+if [[ -n "$PUBLIC_IP" ]]; then
+  echo "==> Removing $PUBLIC_IP from SSH known_hosts"
+  ssh-keygen -R "$PUBLIC_IP" >/dev/null 2>&1 || true
+  echo "    removed if present."
+fi
+
+echo "==> Removing generated inventory '$HOSTS_FILE'"
+if [[ -f "$HOSTS_FILE" ]]; then
+  rm -f "$HOSTS_FILE"
+  echo "    removed."
 else
   echo "    not found."
 fi
