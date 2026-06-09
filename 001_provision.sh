@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 001_provision.sh — provision AWS resources for ansible-minecraft-aws.
+# 001_provision.sh - provision AWS resources for ansible-minecraft-aws.
 # Idempotent: re-running won't double create.
 
 set -euo pipefail
@@ -63,16 +63,16 @@ SG_ID=$(aws ec2 describe-security-groups \
 if [[ "$SG_ID" == "None" || -z "$SG_ID" ]]; then
   SG_ID=$(aws ec2 create-security-group \
     --group-name "$SG_NAME" \
-    --description "ansible-minecraft-aws — CS312 Part 2" \
+    --description "ansible-minecraft-aws - CS312 Part 2" \
     --vpc-id "$VPC_ID" \
     --query 'GroupId' \
     --output text)
   echo "    created $SG_ID"
-  # Minecraft port — world-open, required for nmap from anywhere.
+  # Minecraft port - world-open, required for nmap from anywhere.
   aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
     --protocol tcp --port "$MC_PORT" --cidr "0.0.0.0/0" >/dev/null
   echo "    authorized Minecraft port $MC_PORT from 0.0.0.0/0"
-  # SSH — world-open is acceptable here: key-only auth, ephemeral Lab session,
+  # SSH - world-open is acceptable here: key-only auth, ephemeral Lab session,
   # ephemeral SG (deleted at teardown), no data on the host.
   aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
     --protocol tcp --port 22 --cidr "0.0.0.0/0" >/dev/null

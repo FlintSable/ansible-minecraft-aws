@@ -1,5 +1,5 @@
 ---
-# playbooks/site.yml — install + configure Minecraft on the minecraft host group.
+# playbooks/site.yml - install + configure Minecraft on the minecraft host group.
 # Single play. vars: block below is the single source of truth for all tunables.
 
 - name: Configure Minecraft server on EC2

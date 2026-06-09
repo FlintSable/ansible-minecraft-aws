@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 088_teardown.sh — release all AWS resources created by 001_provision.sh.
+# 088_teardown.sh - release all AWS resources created by 001_provision.sh.
 
 set -euo pipefail
 # shellcheck source=_env.sh
@@ -23,7 +23,7 @@ if [[ -n "$IDS" ]]; then
   # shellcheck disable=SC2086  # intentional word-splitting on multiple IDs
   aws ec2 terminate-instances --instance-ids $IDS >/dev/null
   echo "    terminate requested: $IDS"
-  # Wait before SG delete — otherwise the SG is still in use by the dying ENI
+  # Wait before SG delete - otherwise the SG is still in use by the dying ENI
   # and AWS returns DependencyViolation.
   echo "==> Waiting for instances to terminate..."
   # shellcheck disable=SC2086
