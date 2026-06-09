@@ -1,4 +1,4 @@
-# Shared config for the 0X_*.sh stage scripts. Sourced, not executed.
+# Shared config for the stage scripts. Sourced, not executed.
 # shellcheck shell=bash
 # shellcheck disable=SC2034  # vars are consumed by scripts that source this file
 
