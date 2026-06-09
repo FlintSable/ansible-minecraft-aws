@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 01_provision.sh — provision AWS resources for ansible-minecraft-aws.
+# 001_provision.sh — provision AWS resources for ansible-minecraft-aws.
 # Idempotent: re-running won't double-create.
 
 set -euo pipefail
@@ -124,4 +124,4 @@ echo
 echo "==> Provisioning complete."
 echo "    instance:    $INSTANCE_ID"
 echo "    public IPv4: $PUBLIC_IP"
-echo "    next: ./02_inventory.sh"
+echo "    next: ./002_inventory.sh"

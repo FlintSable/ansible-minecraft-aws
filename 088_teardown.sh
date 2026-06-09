@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 99_teardown.sh — release all AWS resources created by 01_provision.sh.
+# 088_teardown.sh — release all AWS resources created by 001_provision.sh.
 
 set -euo pipefail
 # shellcheck source=_env.sh
