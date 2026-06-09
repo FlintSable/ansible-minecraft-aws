@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 001_provision.sh — provision AWS resources for ansible-minecraft-aws.
-# Idempotent: re-running won't double-create.
+# Idempotent: re-running won't double create.
 
 set -euo pipefail
 # shellcheck source=_env.sh
@@ -113,7 +113,7 @@ aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
 echo "    running."
 
 # --- Public IP ----------------------------------------------------------------
-# Auto-assigned IPv4 persists for the lifetime of the running instance
+# Auto assigned IPv4 persists for the lifetime of the running instance
 # (including across reboot), which is all this project's flows need.
 PUBLIC_IP=$(aws ec2 describe-instances \
   --instance-ids "$INSTANCE_ID" \
