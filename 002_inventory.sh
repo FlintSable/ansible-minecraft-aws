@@ -46,4 +46,4 @@ EOF
 echo
 echo "==> Inventory complete."
 echo "    cat $HOSTS_FILE  to inspect"
-echo "    next: ./03_configure.sh"
+echo "    next: ./003_configure.sh"
