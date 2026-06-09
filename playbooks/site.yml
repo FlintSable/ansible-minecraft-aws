@@ -73,13 +73,24 @@
         group: "{{ minecraft_group }}"
         mode: '0644'
 
-    - name: Render server.properties
-      ansible.builtin.template:
-        src: templates/server.properties.j2
-        dest: "{{ minecraft_server_dir }}/server.properties"
+    - name: Configure server.properties settings
+      ansible.builtin.lineinfile:
+        path: "{{ minecraft_server_dir }}/server.properties"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        create: yes
         owner: "{{ minecraft_user }}"
         group: "{{ minecraft_group }}"
         mode: '0644'
+      loop:
+        - key: server-port
+          value: "{{ mc_port }}"
+        - key: enable-query
+          value: "{{ mc_query_enabled | lower }}"
+        - key: query.port
+          value: "{{ mc_query_port }}"
+        - key: motd
+          value: "{{ motd }}"
       notify: Restart minecraft service
 
     - name: Render systemd unit
@@ -99,6 +110,9 @@
         daemon_reload: yes
 
     # --- Verify phase --------------------------------------------------------
+    - name: Apply pending service restarts before verification
+      ansible.builtin.meta: flush_handlers
+
     - name: Wait for Minecraft to listen on {{ mc_port }}
       ansible.builtin.wait_for:
         port: "{{ mc_port }}"

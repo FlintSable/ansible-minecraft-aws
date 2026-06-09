@@ -23,8 +23,8 @@ ExecStartPre=/usr/bin/mkfifo {{ minecraft_server_dir }}/server.stdin
 # `tail -f` holds the FIFO open so Java doesn't see EOF before ExecStop fires.
 ExecStart=/bin/sh -c 'tail -f {{ minecraft_server_dir }}/server.stdin | /usr/bin/java -Xms{{ java_heap_size }} -Xmx{{ java_heap_size }} -jar server.jar nogui'
 
-# Clean shutdown: warn players, send /stop, let TimeoutStopSec be the safety net.
-ExecStop=/bin/sh -c 'echo "say Server shutting down in 10 seconds…" > {{ minecraft_server_dir }}/server.stdin; sleep 10; echo "stop" > {{ minecraft_server_dir }}/server.stdin'
+# Clean shutdown: warn players, force a save, send /stop, let TimeoutStopSec be the safety net.
+ExecStop=/bin/sh -c 'echo "say Server shutting down in 10 seconds..." > {{ minecraft_server_dir }}/server.stdin; sleep 10; echo "save-all flush" > {{ minecraft_server_dir }}/server.stdin; sleep 2; echo "stop" > {{ minecraft_server_dir }}/server.stdin'
 TimeoutStopSec=60
 
 Restart=on-failure
