@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034  # vars are consumed by scripts that source this file
 
-# Disable AWS CLI v2's built-in pager — without this, long --output text results
+# Disable AWS CLI v2's built-in pager - without this, long --output text results
 # get piped into `less` and block the script waiting for you to press 'q'.
 export AWS_PAGER=""
 

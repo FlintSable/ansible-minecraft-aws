@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 002_inventory.sh — creates hosts.ini from the running minecraft EC2 instance.
+# 002_inventory.sh - creates hosts.ini from the running minecraft EC2 instance.
 
 set -euo pipefail
 # shellcheck source=_env.sh
