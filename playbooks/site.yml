@@ -8,21 +8,21 @@
   gather_facts: yes
 
   vars:
-    # Version & download (Part 1 §7)
+    # Version & download
     minecraft_version: "26.1.2"
     server_jar_url: "https://piston-data.mojang.com/v1/objects/97ccd4c0ed3f81bbb7bfacddd1090b0c56f9bc51/server.jar"
 
-    # System user & paths (Part 1 §6)
+    # System user & paths
     minecraft_user:       minecraft
     minecraft_group:      minecraft
     minecraft_home:       /opt/minecraft
     minecraft_server_dir: /opt/minecraft/server
 
-    # Java (Part 1 §5, §10)
+    # Java
     java_package:   openjdk-25-jre-headless
     java_heap_size: "800M"
 
-    # Network (Part 1 §9, §11, §13)
+    # Network
     mc_port:          25565
     mc_query_enabled: true
     mc_query_port:    25565
@@ -31,7 +31,7 @@
     motd: "Acme Corp Minecraft Server"
 
   tasks:
-    # --- Install phase (Part 1 §5–§6) ---------------------------------------
+    # --- Install phase ---------------------------------------
     - name: Install Java + wget
       ansible.builtin.apt:
         name:
@@ -56,7 +56,7 @@
         group: "{{ minecraft_group }}"
         mode: '0755'
 
-    # --- Configure phase (Part 1 §7–§10) -------------------------------------
+    # --- Configure phase -------------------------------------
     - name: Download Minecraft server jar
       ansible.builtin.get_url:
         url: "{{ server_jar_url }}"
