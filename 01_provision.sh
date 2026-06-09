@@ -72,24 +72,13 @@ if [[ "$SG_ID" == "None" || -z "$SG_ID" ]]; then
   aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
     --protocol tcp --port "$MC_PORT" --cidr "0.0.0.0/0" >/dev/null
   echo "    authorized Minecraft port $MC_PORT from 0.0.0.0/0"
+  # SSH — world-open is acceptable here: key-only auth, ephemeral Lab session,
+  # ephemeral SG (deleted at teardown), no data on the host.
+  aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
+    --protocol tcp --port 22 --cidr "0.0.0.0/0" >/dev/null
+  echo "    authorized SSH/22 from 0.0.0.0/0"
 else
   echo "    already exists ($SG_ID)"
-fi
-
-# SSH ingress — accumulate caller IPs across local + GHA runs.
-# Only authorize the current caller's /32 if it's not already present in the SG.
-CALLER_IP=$(curl -s https://checkip.amazonaws.com)
-CALLER_CIDR="${CALLER_IP}/32"
-echo "==> Ensuring SSH ingress for caller IP $CALLER_CIDR"
-EXISTING_SSH=$(aws ec2 describe-security-groups --group-ids "$SG_ID" \
-  --query "SecurityGroups[0].IpPermissions[?FromPort==\`22\`].IpRanges[].CidrIp" \
-  --output text)
-if echo "$EXISTING_SSH" | tr '\t' '\n' | grep -qx "$CALLER_CIDR"; then
-  echo "    $CALLER_CIDR already authorized"
-else
-  aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
-    --protocol tcp --port 22 --cidr "$CALLER_CIDR" >/dev/null
-  echo "    authorized SSH/22 from $CALLER_CIDR"
 fi
 
 # --- Instance -----------------------------------------------------------------
@@ -123,43 +112,16 @@ echo "==> Waiting for instance to enter 'running' state..."
 aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
 echo "    running."
 
-# --- Elastic IP ---------------------------------------------------------------
-echo "==> Ensuring an Elastic IP is allocated for this project"
-EIP_ALLOC=$(aws ec2 describe-addresses \
-  --filters "Name=tag:Project,Values=$PROJECT_TAG" \
-  --query 'Addresses[0].AllocationId' \
-  --output text 2>/dev/null || echo "None")
-
-if [[ "$EIP_ALLOC" == "None" || -z "$EIP_ALLOC" ]]; then
-  EIP_ALLOC=$(aws ec2 allocate-address \
-    --domain vpc \
-    --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Project,Value=$PROJECT_TAG}]" \
-    --query 'AllocationId' \
-    --output text)
-  echo "    allocated EIP $EIP_ALLOC"
-fi
-
-# Get the current association state.
-EIP_INSTANCE=$(aws ec2 describe-addresses \
-  --allocation-ids "$EIP_ALLOC" \
-  --query 'Addresses[0].InstanceId' \
+# --- Public IP ----------------------------------------------------------------
+# Auto-assigned IPv4 persists for the lifetime of the running instance
+# (including across reboot), which is all this project's flows need.
+PUBLIC_IP=$(aws ec2 describe-instances \
+  --instance-ids "$INSTANCE_ID" \
+  --query 'Reservations[0].Instances[0].PublicIpAddress' \
   --output text)
 
-if [[ "$EIP_INSTANCE" != "$INSTANCE_ID" ]]; then
-  aws ec2 associate-address \
-    --allocation-id "$EIP_ALLOC" \
-    --instance-id "$INSTANCE_ID" >/dev/null
-  echo "    associated EIP with $INSTANCE_ID"
-else
-  echo "    EIP already associated with $INSTANCE_ID"
-fi
-
-EIP_ADDR=$(aws ec2 describe-addresses \
-  --allocation-ids "$EIP_ALLOC" \
-  --query 'Addresses[0].PublicIp' \
-  --output text)
 echo
 echo "==> Provisioning complete."
 echo "    instance:    $INSTANCE_ID"
-echo "    elastic IP:  $EIP_ADDR"
+echo "    public IPv4: $PUBLIC_IP"
 echo "    next: ./02_inventory.sh"
