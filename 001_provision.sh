@@ -101,6 +101,7 @@ else
     --count "$INSTANCE_COUNT" \
     --key-name "$KEY_NAME" \
     --security-group-ids "$SG_ID" \
+    --iam-instance-profile Name=LabInstanceProfile \
     --tag-specifications \
       "ResourceType=instance,Tags=[{Key=Project,Value=$PROJECT_TAG},{Key=Role,Value=minecraft}]" \
     --query 'Instances[0].InstanceId' \
