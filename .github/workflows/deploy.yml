@@ -1,0 +1,41 @@
+---
+name: Deploy Minecraft to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only one deploy at a time — second push waits for first to finish.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Provision + configure + verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install AWS CLI, Ansible, nmap
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ansible nmap
+          aws --version
+          ansible --version
+          nmap --version | head -1
+
+      - name: Configure AWS credentials from Learner Lab session
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region:            us-east-1
+
+      - name: Run the deploy pipeline
+        run: ./deploy.sh
