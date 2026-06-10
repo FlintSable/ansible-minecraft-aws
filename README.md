@@ -73,7 +73,7 @@ local terminal or GitHub Actions
   - writes hosts.ini with the EC2 public IPv4 address
         |
         v
-03_configure.sh
+003_configure.sh
   - waits for EC2 to be ready
   - runs the Ansible playbook
   - verifies Minecraft with nmap
@@ -102,7 +102,7 @@ Run from the repository root after adding fresh Learner Lab credentials to
 ```bash
 ./001_provision.sh
 ./002_inventory.sh
-./03_configure.sh
+./003_configure.sh
 ```
 
 Verify the server:
@@ -182,7 +182,7 @@ aws ec2 reboot-instances --instance-ids "$INSTANCE_ID"
 After about 90 seconds, run the `nmap` command again. The same public IPv4 should
 still answer on port `25565`.
 
-For the clean-shutdown fix, the Ansible-managed `minecraft.service` uses
+For the clean shutdown fix, the Ansible-managed `minecraft.service` uses
 `ExecStop` to send `stop` to the Minecraft console before systemd finishes stopping
 the service. In the demo, I check the service logs for Minecraft save messages.
 
@@ -202,7 +202,7 @@ group, and deletes the AWS key pair. It does not delete my local SSH key from
 
 - CS312 Course Project Part 1 tutorial, used for the Minecraft version, paths,
   port, and original `systemd` service.
-- CS312 Assignment 4 Ansible materials, used for the stage-script pattern.
+- CS312 Assignment 4 Ansible materials, used for the stage script pattern.
 - Minecraft server download and EULA:
   <https://www.minecraft.net/en-us/download/server>
 - AWS CLI EC2 command reference:
